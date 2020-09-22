@@ -66,6 +66,9 @@ crashlytics-build.properties
 # Ignore project version file
 /[Pp]rojectSettings/ProjectVersion.txt
 
+# Ignore vscode folder
+/.vscode
+
 # Packed Addressables
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 
