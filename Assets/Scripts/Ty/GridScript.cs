@@ -2,32 +2,35 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GridScript : MonoBehaviour
+namespace Ty
 {
-    //List<Transform> gridPoints;
-    public float gridDistance;
-    public float height;
-    public float width;
-
-    public Vector3 GetNearestPoint(Vector3 vector)
+    public class GridScript : MonoBehaviour
     {
-        Vector3 mVec = new Vector3(Mathf.Clamp(vector.x, -((width / 2) * gridDistance), ((width / 2) * gridDistance)), 0, Mathf.Clamp(vector.z, -((height / 2) * gridDistance), ((height / 2) * gridDistance)));
-        mVec /= gridDistance;
-        mVec = new Vector3(Mathf.Round(mVec.x), 0, Mathf.Round(mVec.z));
-        mVec *= gridDistance;
+        //List<Transform> gridPoints;
+        public float gridDistance;
+        public float height;
+        public float width;
 
-        /*
-        int index = 0;
-        float distance = Vector3.Distance(vector, new Vector3(gridPoints[0].position.x, 0, gridPoints[0].position.y));
-        for (int i = 0; i < gridPoints.Count; i++)
+        public Vector3 GetNearestPoint(Vector3 vector)
         {
-            if (Vector3.Distance(vector, new Vector3(gridPoints[i].position.x, 0, gridPoints[i].position.y)) <= distance)
-            {
-                index = i;
-            }
-        }
-        */
+            Vector3 mVec = new Vector3(Mathf.Clamp(vector.x, -((width / 2) * gridDistance), ((width / 2) * gridDistance)), 0, Mathf.Clamp(vector.z, -((height / 2) * gridDistance), ((height / 2) * gridDistance)));
+            mVec /= gridDistance;
+            mVec = new Vector3(Mathf.Round(mVec.x), 0, Mathf.Round(mVec.z));
+            mVec *= gridDistance;
 
-        return mVec;
+            /*
+            int index = 0;
+            float distance = Vector3.Distance(vector, new Vector3(gridPoints[0].position.x, 0, gridPoints[0].position.y));
+            for (int i = 0; i < gridPoints.Count; i++)
+            {
+                if (Vector3.Distance(vector, new Vector3(gridPoints[i].position.x, 0, gridPoints[i].position.y)) <= distance)
+                {
+                    index = i;
+                }
+            }
+            */
+
+            return mVec;
+        }
     }
 }
