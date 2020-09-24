@@ -10,6 +10,31 @@ namespace Ty
         public float gridDistance;
         public float height;
         public float width;
+        List<Vector3> wallPoints = new List<Vector3>();
+
+        private void Awake()
+        {
+            Vector3 point = new Vector3(-((width / 2) * gridDistance), 0, (height / 2) * gridDistance);
+            print(point.x);
+            for (int i = 0; i < height * width; i++)
+            {
+                Debug.DrawRay(point, Vector3.up, Color.red, 10f);
+                if (Physics.Raycast(point, Vector3.up, 1f))
+                {
+                    wallPoints.Add(point);
+                }
+                if (point.x >= (width / 2) * gridDistance)
+                {
+                    point.x = -((width / 2) * gridDistance);
+                    point.z -= gridDistance;
+                }
+                else
+                {
+                    point.x += gridDistance;
+                }
+            }
+            print(wallPoints.Count);
+        }
 
         public Vector3 GetNearestPoint(Vector3 vector)
         {
