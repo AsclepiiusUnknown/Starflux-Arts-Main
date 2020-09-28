@@ -66,6 +66,19 @@ namespace Ty
 
         public float CalculateValue(Vector2 position, Vector2 destination)
         {
+            bool temp = true;
+            for (int i = 0; i < gridPoints.Count; i++)
+            {
+                if (gridPoints[i].transform.position == new Vector3(position.x, 0, position.y))
+                {
+                    temp = false;
+                    break;
+                }
+            }
+            if (!temp)
+            {
+                return -1;
+            }
             return Vector2.Distance(position, destination);
         }
 
@@ -73,9 +86,13 @@ namespace Ty
         {
             // Currently unfinished
             List<Vector2> list =  new List<Vector2>();
-            float posX = Mathf.Clamp(position.x, -((width / 2) * gridDistance), ((width / 2) * gridDistance));
-            float posY = Mathf.Clamp(position.y, -((height / 2) * gridDistance), ((height / 2) * gridDistance));
-            list.Add(new Vector2(0, 0));
+            for (int i = 0; i < gridPoints.Count; i++)
+            {
+                if ((Mathf.Abs(gridPoints[i].transform.position.x - position.x) + Mathf.Abs(gridPoints[i].transform.position.y - position.y)) <= 2)
+                {
+                    list.Add(gridPoints[i].transform.position);
+                }
+            }
             return list;
         }
     }
