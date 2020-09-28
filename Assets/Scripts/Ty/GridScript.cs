@@ -8,20 +8,24 @@ namespace Ty
     {
         //List<Transform> gridPoints;
         public float gridDistance;
+        public GameObject gridPart;
         public float height;
         public float width;
-        List<Vector3> wallPoints = new List<Vector3>();
+        List<GameObject> gridPoints = new List<GameObject>();
 
         private void Awake()
         {
             Vector3 point = new Vector3(-((width / 2) * gridDistance), 0, (height / 2) * gridDistance);
+            int temp = 0;
             print(point.x);
-            for (int i = 0; i < height * width; i++)
+            for (int i = 0; i < ((height + 1) * (width + 1)); i++)
             {
                 Debug.DrawRay(point, Vector3.up, Color.red, 10f);
-                if (Physics.Raycast(point, Vector3.up, 1f))
+                if (!Physics.Raycast(point, Vector3.up, 1f))
                 {
-                    wallPoints.Add(point);
+                    GameObject g = Instantiate(gridPart);
+                    g.transform.position = point;
+                    gridPoints.Add(g);
                 }
                 if (point.x >= (width / 2) * gridDistance)
                 {
@@ -32,8 +36,10 @@ namespace Ty
                 {
                     point.x += gridDistance;
                 }
+                temp++;
+                print(point);
             }
-            print(wallPoints.Count);
+            //print(wallPoints.Count + ", " + temp);
         }
 
         public Vector3 GetNearestPoint(Vector3 vector)
