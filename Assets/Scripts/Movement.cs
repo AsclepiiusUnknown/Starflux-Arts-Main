@@ -40,10 +40,10 @@ public class Movement : MonoBehaviour
         }
 
 
-        StartCoroutine(Turn(targetPosition));
+        // StartCoroutine(Turn(targetPosition));
 
         //transform.position = Vector3.RotateTowards(transform.position, targetPosition, speed*Time.deltaTime, 0.0f);
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, Time.deltaTime * smooth);
+        StartCoroutine(Move(targetPosition));
     }
 
     IEnumerator Move(Vector3 _targetPosition)

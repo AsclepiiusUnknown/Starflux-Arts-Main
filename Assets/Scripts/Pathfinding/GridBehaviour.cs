@@ -109,6 +109,8 @@ namespace Pathfinding
                 y = tempGO.GetComponent<GridStat>().y;
                 tempList.Clear();
             }
+
+            InvertPath();
         }
 
         void InitialSetup()
@@ -135,12 +137,12 @@ namespace Pathfinding
                     else
                         return false;
                 case 3:
-                    if (y - 1 < -1 && gridArray[x, y - 1] && gridArray[x, y - 1].GetComponent<GridStat>().visited == step)
+                    if (y - 1 > -1 && gridArray[x, y - 1] && gridArray[x, y - 1].GetComponent<GridStat>().visited == step)
                         return true;
                     else
                         return false;
                 case 4:
-                    if (x - 1 < -1 && gridArray[x - 1, y] && gridArray[x - 1, y].GetComponent<GridStat>().visited == step)
+                    if (x - 1 > -1 && gridArray[x - 1, y] && gridArray[x - 1, y].GetComponent<GridStat>().visited == step)
                         return true;
                     else
                         return false;
@@ -181,6 +183,11 @@ namespace Pathfinding
                 }
             }
             return list[index];
+        }
+
+        private void InvertPath()
+        {
+            path.Reverse();
         }
     }
 }
