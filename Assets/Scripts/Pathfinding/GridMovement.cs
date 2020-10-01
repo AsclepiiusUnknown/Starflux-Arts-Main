@@ -35,6 +35,11 @@ namespace Pathfinding
             for (int i = 0; i < invertedPath.Count - 1; i++)
             {
                 yield return MoveTo(invertedPath[i].transform.position, invertedPath[i + 1].transform.position, _controlled);
+
+                if (i == invertedPath.Count - 1)
+                {
+                    // behaviour.startX = 
+                }
             }
         }
 
