@@ -17,6 +17,22 @@ namespace Ty
                 return infoStruct;
             }
         }
+
+        public void SelectUnit()
+        {
+            if (playerControlled)
+            {
+                //Unit selected
+            }
+        }
+
+        void SelectMovePosition()
+        {
+            if (!playerControlled)
+            {
+                //Selects position to move to
+            }
+        }
     }
 
     [System.Serializable]
