@@ -8,6 +8,13 @@ namespace Ty
     {
         [SerializeField]
         bool playerControlled;
+        public bool PlayerControlled
+        {
+            get
+            {
+                return playerControlled;
+            }
+        }
         [SerializeField]
         UnitInformation infoStruct;
         public UnitInformation InfoStruct
@@ -17,6 +24,10 @@ namespace Ty
                 return infoStruct;
             }
         }
+        bool moving;
+        List<Vector3> movePositionList = new List<Vector3>();
+        int moveIndex;
+        public float moveSpeed = 3f;
 
         public void SelectUnit()
         {
@@ -26,12 +37,51 @@ namespace Ty
             }
         }
 
-        void SelectMovePosition()
+        public void SelectMovePosition(List<Vector3> positions)
         {
-            if (!playerControlled)
+            movePositionList = positions;
+            moveIndex = 0;
+            moving = true;
+        }
+
+        private void Update()
+        {
+            if (moving)
             {
-                //Selects position to move to
+                if (moveIndex < movePositionList.Count)
+                {
+                    if (Vector3.Distance(transform.position, movePositionList[moveIndex]) < 0.1f)
+                    {
+                        transform.position = new Vector3(Mathf.Lerp(transform.position.x, movePositionList[moveIndex].x, moveSpeed * Time.deltaTime), transform.position.y, Mathf.Lerp(transform.position.z, movePositionList[moveIndex].z, moveSpeed * Time.deltaTime));
+                    }
+                    else
+                    {
+                        moveIndex++;
+                    }
+                }
+                else
+                {
+                    moving = false;
+                    if (!playerControlled)
+                    {
+                        FindObjectOfType<TurnScript>().EnemyCompleteMovement();
+                    }
+                }
             }
+        }
+
+        public static List<UnitScript> GetAllUnitsOfControlType(bool player)
+        {
+            UnitScript[] units = FindObjectsOfType<UnitScript>();
+            List<UnitScript> unitsOut = new List<UnitScript>();
+            for (int i = 0; i < units.Length; i++)
+            {
+                if ((units[i].PlayerControlled && player) || (!units[i].PlayerControlled && !player))
+                {
+                    unitsOut.Add(units[i]);
+                }
+            }
+            return unitsOut;
         }
     }
 
@@ -39,11 +89,32 @@ namespace Ty
     public struct UnitInformation
     {
         [SerializeField]
-        List<GameObject> gadgetList;
+        List<GadgetScript> gadgetList;
+        public List<GadgetScript> GadgetList
+        {
+            get
+            {
+                return gadgetList;
+            }
+        }
         [SerializeField]
         int maxHealth;
+        public int MaxHealth
+        {
+            get
+            {
+                return maxHealth;
+            }
+        }
         [SerializeField]
         int tileMoveSpeed;
+        public int TileMoveSpeed
+        {
+            get
+            {
+                return tileMoveSpeed;
+            }
+        }
         /*
         public UnitInformation(List<GadgetScript> gadgets, int health, int movement)
         {
