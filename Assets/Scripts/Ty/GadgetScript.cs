@@ -6,6 +6,7 @@ namespace Ty
 {
     public class GadgetScript : MonoBehaviour
     {
-
+        public GameObject gadgetPrefab;
+        public string gadgetName;
     }
 }
