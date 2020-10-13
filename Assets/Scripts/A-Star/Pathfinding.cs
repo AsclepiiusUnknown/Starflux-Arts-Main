@@ -13,6 +13,7 @@ namespace AStar
         private void Awake()
         {
             grid = GetComponent<Grid>();
+
         }
 
         private void Update()
@@ -20,7 +21,7 @@ namespace AStar
             FindPath(startPos.position, targetPos.position);
         }
 
-        void FindPath(Vector3 _startPos, Vector3 _targetPos)
+        public void FindPath(Vector3 _startPos, Vector3 _targetPos)
         {
             Node startNode = grid.NodeFromWorldPos(_startPos);
             Node targetNode = grid.NodeFromWorldPos(_targetPos);

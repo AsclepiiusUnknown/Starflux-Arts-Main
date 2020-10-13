@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AStar
 {
+    [System.Serializable]
     public class Node
     {
         public int gridX; //X Pos in the node array

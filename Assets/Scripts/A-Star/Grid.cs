@@ -12,7 +12,8 @@ namespace AStar
         public float nodeRadius; //size of nodes
         public float dist; //node spacing
 
-        Node[,] grid; //our grid array (2D is easier to read but harder to manage)
+        // [HideInInspector]
+        public Node[,] grid; //our grid array (2D is easier to read but harder to manage)
         public List<Node> finalPath; //completed path the algorithm finds
 
         float nodeDiameter; // doubled radius
@@ -139,7 +140,6 @@ namespace AStar
                     }
 
                     Gizmos.DrawCube(node.pos, Vector3.one * (nodeDiameter - dist)); //draw node at its pos
-
                 }
             }
         }
