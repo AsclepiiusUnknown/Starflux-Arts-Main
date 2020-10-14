@@ -7,6 +7,8 @@ namespace Ty
     public class PlayerInput : MonoBehaviour
     {
         UnitScript currentUnitRef;
+        public GameObject pathLineRenderer;
+
 
         private void Update()
         {
@@ -23,26 +25,54 @@ namespace Ty
                             if (hit.collider.gameObject.GetComponent<UnitScript>() && hit.collider.gameObject.GetComponent<UnitScript>().PlayerControlled)
                             {
                                 currentUnitRef = hit.collider.gameObject.GetComponent<UnitScript>();
-                                FindObjectOfType<UnitHUDScript>().ShowUnitInfo(currentUnitRef.InfoStruct);
+                                currentUnitRef.SelectUnit();
+                                print("Select Unit");
                             }
                         }
                     }
-                    else
+                    else if (!currentUnitRef.Moving)
                     {
                         Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
                         RaycastHit hit;
                         if (Physics.Raycast(ray, out hit))
                         {
                             //Is valid position
-                            //currentUnitRef.SelectMovePosition(FindObjectOfType<AStar.Pathfinding>().FindPath(currentUnitRef.transform.position, hit.point));
+                            currentUnitRef.SelectMovePosition(currentUnitRef.GetPathListFromPathfinder(hit.point));
+                            if (FindObjectOfType<PathLineScript>())
+                            {
+                                FindObjectOfType<PathLineScript>().RemoveSelf();
+                            }
                         }
                     }
                 }
-                else
+                else if (currentUnitRef && !currentUnitRef.Moving)
                 {
-                    //FindObjectOfType<AStar.Pathfinding>().FindPath(currentUnitRef.transform.position, Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y)));
+                    Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        if (hit.collider.gameObject.layer == 0) //Temp check, replace with more complex one.
+                        {
+                            GameObject lne;
+                            if (FindObjectOfType<PathLineScript>())
+                            {
+                                lne = FindObjectOfType<PathLineScript>().gameObject;
+                            }
+                            else
+                            {
+                                lne = Instantiate(pathLineRenderer);
+                            }
+                            lne.transform.position = currentUnitRef.transform.position;
+                            lne.GetComponent<Ty.PathLineScript>().ShowPath(currentUnitRef.transform.position, currentUnitRef.GetPathListFromPathfinder(hit.point), currentUnitRef.InfoStruct.TileMoveSpeed);
+                        }
+                    }   
                 }
             }
+        }
+
+        public void RemovePlayerUnitRef()
+        {
+            currentUnitRef = null;
         }
     }
 }

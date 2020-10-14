@@ -25,23 +25,62 @@ namespace Ty
             }
         }
         bool moving;
+        public bool Moving
+        {
+            get
+            {
+                return moving;
+            }
+        }
+        bool movedThisTurn;
+        public bool MovedThisTurn
+        {
+            get
+            {
+                return movedThisTurn;
+            }
+            set
+            {
+                movedThisTurn = value;
+            }
+        }
         List<Vector3> movePositionList = new List<Vector3>();
         int moveIndex;
         public float moveSpeed = 3f;
 
         public void SelectUnit()
         {
-            if (playerControlled)
+            if (playerControlled && !MovedThisTurn)
             {
-                //Unit selected
+                FindObjectOfType<UnitHUDScript>().ShowPlayerHUD();
+                FindObjectOfType<UnitHUDScript>().ShowUnitInfo(InfoStruct);
             }
         }
 
         public void SelectMovePosition(List<Vector3> positions)
         {
-            movePositionList = positions;
-            moveIndex = 0;
-            moving = true;
+            if (infoStruct.TileMoveSpeed < positions.Count)
+            {
+                positions.RemoveRange(infoStruct.TileMoveSpeed, positions.Count - infoStruct.TileMoveSpeed);
+            }
+            if (positions.Count > 0)
+            {
+                movePositionList = positions;
+                moveIndex = 0;
+                moving = true;
+                MovedThisTurn = true;
+            }
+        }
+
+        public List<Vector3> GetPathListFromPathfinder(Vector3 destination)
+        {
+            FindObjectOfType<AStar.Pathfinding>().FindPath(transform.position, destination);
+            List<Vector3> vectorList = new List<Vector3>();
+            for (int i = 0; i < FindObjectOfType<AStar.Grid>().finalPath.Count; i++)
+            {
+                vectorList.Add(FindObjectOfType<AStar.Grid>().finalPath[i].pos);
+            }
+            return vectorList;
         }
 
         private void Update()
@@ -50,19 +89,24 @@ namespace Ty
             {
                 if (moveIndex < movePositionList.Count)
                 {
-                    if (Vector3.Distance(transform.position, movePositionList[moveIndex]) < 0.1f)
+                    if (Vector3.Distance(transform.position, movePositionList[moveIndex]) > 0.1f)
                     {
-                        transform.position = new Vector3(Mathf.Lerp(transform.position.x, movePositionList[moveIndex].x, moveSpeed * Time.deltaTime), transform.position.y, Mathf.Lerp(transform.position.z, movePositionList[moveIndex].z, moveSpeed * Time.deltaTime));
+                        transform.position = transform.position + (Vector3.Normalize(movePositionList[moveIndex] - transform.position)) * moveSpeed * Time.deltaTime;
                     }
                     else
                     {
+                        transform.position = movePositionList[moveIndex];
                         moveIndex++;
                     }
                 }
                 else
                 {
                     moving = false;
-                    if (!playerControlled)
+                    if (playerControlled)
+                    {
+                        FindObjectOfType<TurnScript>().PlayerFinishedMove();
+                    }
+                    else
                     {
                         FindObjectOfType<TurnScript>().EnemyCompleteMovement();
                     }

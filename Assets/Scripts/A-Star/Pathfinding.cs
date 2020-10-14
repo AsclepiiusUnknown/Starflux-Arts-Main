@@ -18,7 +18,7 @@ namespace AStar
 
         private void Update()
         {
-            FindPath(startPos.position, targetPos.position);
+            //FindPath(startPos.position, targetPos.position);
         }
 
         public void FindPath(Vector3 _startPos, Vector3 _targetPos)

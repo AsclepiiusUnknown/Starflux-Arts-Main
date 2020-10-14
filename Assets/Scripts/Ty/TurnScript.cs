@@ -47,6 +47,13 @@ namespace Ty
         void PlayerTurnBegin()
         {
             isPlayerTurn = true;
+            for (int i = 0; i < FindObjectsOfType<UnitScript>().Length; i++)
+            {
+                if (FindObjectsOfType<UnitScript>()[i].PlayerControlled)
+                {
+                    FindObjectsOfType<UnitScript>()[i].MovedThisTurn = false;
+                }
+            }
         }
 
         public void PlayerTurnEnd()
@@ -60,7 +67,10 @@ namespace Ty
             isEnemyTurn = true;
             if (enemyUnits.Count > 0)
             {
-                enemyUnits[0].SelectMovePosition(new List<Vector3>()); //Temp
+                for (int i = 0; i < enemyUnits.Count; i++)
+                {
+                    enemyUnits[i].MovedThisTurn = true;
+                }
             }
             else
             {
@@ -73,6 +83,11 @@ namespace Ty
             enemyMoving = 0;
             PlayerTurnBegin();
             isEnemyTurn = false;
+        }
+
+        public void PlayerFinishedMove()
+        {
+            FindObjectOfType<PlayerInput>().RemovePlayerUnitRef();
         }
 
         void PlayerWin()

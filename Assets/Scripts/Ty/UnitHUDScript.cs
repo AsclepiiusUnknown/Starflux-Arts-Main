@@ -9,6 +9,7 @@ namespace Ty {
         public GameObject gadgetButtonPrefab;
         public GameObject gadgetButtonParentRef;
         public GameObject unitInfoPanelRef;
+        public GameObject playerPanelRef;
 
         void GadgetButtonSetup(List<GadgetScript> gadgetList)
         {
@@ -19,14 +20,6 @@ namespace Ty {
                 gdjt.transform.position = new Vector2(gadgetButtonParentRef.transform.position.x, i * 50f);
                 gdjt.GetComponentInChildren<Text>().text = gadgetList[i].gadgetName;
             }
-        }
-
-        private void Start()
-        {
-            //<Temp>
-            ShowUnitInfo(new UnitInformation());
-            Invoke("HideUnitInfo", 3f);
-            //<\Temp>
         }
 
         public void ShowUnitInfo(UnitInformation unitInfo)
@@ -40,8 +33,14 @@ namespace Ty {
             unitInfoPanelRef.SetActive(false);
         }
 
+        public void ShowPlayerHUD()
+        {
+            playerPanelRef.SetActive(true);
+        }
+
         public void EndTurn()
         {
+            playerPanelRef.SetActive(false);
             FindObjectOfType<TurnScript>().PlayerTurnEnd();
         }
     }
