@@ -11,7 +11,7 @@ namespace Ty {
         public GameObject unitInfoPanelRef;
         public GameObject playerPanelRef;
 
-        void GadgetButtonSetup(List<GadgetScript> gadgetList)
+        void GadgetButtonSetup(List<GadgetInfoStruct> gadgetList)
         {
             for (int i = 0; i < gadgetList.Count; i++)
             {
@@ -19,6 +19,8 @@ namespace Ty {
                 gdjt.transform.SetParent(gadgetButtonParentRef.transform);
                 gdjt.transform.position = new Vector2(gadgetButtonParentRef.transform.position.x, i * 50f);
                 gdjt.GetComponentInChildren<Text>().text = gadgetList[i].gadgetName;
+                gdjt.GetComponent<GadgetMenuButtonScript>().unitRef = FindObjectOfType<PlayerInput>().CurrentUnitRef;
+                gdjt.GetComponent<GadgetMenuButtonScript>().structIn = gadgetList[i];
             }
         }
 

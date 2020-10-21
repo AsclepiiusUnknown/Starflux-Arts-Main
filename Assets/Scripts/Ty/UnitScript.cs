@@ -44,6 +44,15 @@ namespace Ty
                 movedThisTurn = value;
             }
         }
+        public Transform holdPosition;
+        GadgetScript heldGadget;
+        public GadgetScript HeldGadget
+        {
+            get
+            {
+                return heldGadget;
+            }
+        }
         List<Vector3> movePositionList = new List<Vector3>();
         int moveIndex;
         public float moveSpeed = 3f;
@@ -54,6 +63,32 @@ namespace Ty
             {
                 FindObjectOfType<UnitHUDScript>().ShowPlayerHUD();
                 FindObjectOfType<UnitHUDScript>().ShowUnitInfo(InfoStruct);
+            }
+        }
+
+        public void SpawnGadget(GadgetInfoStruct gadgetIn)
+        {
+            UnequipGadget();
+            GadgetScript gadg = Instantiate(gadgetIn.prefab, holdPosition.position, holdPosition.rotation, holdPosition).GetComponent<GadgetScript>();
+            heldGadget = gadg;
+            if (playerControlled)
+            {
+                FindObjectOfType<PlayerInput>().SetGadgetControl(gadg.Info.controlType);
+                FindObjectOfType<PlayerInput>().EndLine();
+            }
+            gadg.unitHolding = this;
+        }
+
+        public void UnequipGadget()
+        {
+            if (heldGadget)
+            {
+                Destroy(heldGadget.gameObject);
+                heldGadget = null;
+                if (playerControlled)
+                {
+                    FindObjectOfType<PlayerInput>().RemoveGadgetControl();
+                }
             }
         }
 
@@ -133,8 +168,8 @@ namespace Ty
     public struct UnitInformation
     {
         [SerializeField]
-        List<GadgetScript> gadgetList;
-        public List<GadgetScript> GadgetList
+        List<GadgetInfoStruct> gadgetList;
+        public List<GadgetInfoStruct> GadgetList
         {
             get
             {

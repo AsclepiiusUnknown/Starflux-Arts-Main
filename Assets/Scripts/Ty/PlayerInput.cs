@@ -7,8 +7,16 @@ namespace Ty
     public class PlayerInput : MonoBehaviour
     {
         UnitScript currentUnitRef;
+        public UnitScript CurrentUnitRef
+        {
+            get
+            {
+                return currentUnitRef;
+            }
+        }
         public GameObject pathLineRenderer;
-
+        bool isGadgetControl = false;
+        int gadgetControlType = 0;
 
         private void Update()
         {
@@ -30,7 +38,7 @@ namespace Ty
                             }
                         }
                     }
-                    else if (!currentUnitRef.Moving)
+                    else if (!(currentUnitRef.Moving || isGadgetControl))
                     {
                         Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
                         RaycastHit hit;
@@ -38,14 +46,40 @@ namespace Ty
                         {
                             //Is valid position
                             currentUnitRef.SelectMovePosition(currentUnitRef.GetPathListFromPathfinder(hit.point));
-                            if (FindObjectOfType<PathLineScript>())
-                            {
-                                FindObjectOfType<PathLineScript>().RemoveSelf();
-                            }
+                            EndLine();
+                        }
+                    }
+                    else
+                    {
+                        switch (gadgetControlType)
+                        {
+                            default:
+                                Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
+                                RaycastHit hit;
+                                if (Physics.Raycast(ray, out hit))
+                                {
+                                    if (!hit.collider.gameObject.GetComponent<UnitScript>())
+                                    {
+                                        currentUnitRef.HeldGadget.SelectPosition(hit.point);
+                                    }
+                                }
+                                break;
                         }
                     }
                 }
-                else if (currentUnitRef && !currentUnitRef.Moving)
+                else if (Input.GetMouseButtonDown(1))
+                {
+                    if (isGadgetControl)
+                    {
+                        currentUnitRef.UnequipGadget();
+                    }
+                    else
+                    {
+                        RemovePlayerUnitRef();
+                        EndLine();
+                    }
+                }
+                else if (currentUnitRef && !currentUnitRef.Moving && !isGadgetControl)
                 {
                     Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
                     RaycastHit hit;
@@ -65,14 +99,34 @@ namespace Ty
                             lne.transform.position = currentUnitRef.transform.position;
                             lne.GetComponent<Ty.PathLineScript>().ShowPath(currentUnitRef.transform.position, currentUnitRef.GetPathListFromPathfinder(hit.point), currentUnitRef.InfoStruct.TileMoveSpeed);
                         }
-                    }   
+                    }
                 }
+            }
+        }
+
+        public void EndLine()
+        {
+            if (FindObjectOfType<PathLineScript>())
+            {
+                FindObjectOfType<PathLineScript>().RemoveSelf();
             }
         }
 
         public void RemovePlayerUnitRef()
         {
             currentUnitRef = null;
+        }
+
+        public void SetGadgetControl(int controlType)
+        {
+            isGadgetControl = true;
+            gadgetControlType = controlType;
+        }
+
+        public void RemoveGadgetControl()
+        {
+            isGadgetControl = false;
+            gadgetControlType = -1;
         }
     }
 }
