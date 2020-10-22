@@ -17,69 +17,72 @@ namespace Ty
         public GameObject pathLineRenderer;
         bool isGadgetControl = false;
         int gadgetControlType = 0;
+        public bool unpaseAllowed = true;
 
         private void Update()
         {
-            if (TurnScript.IsPlayerTurn)
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                FindObjectOfType<UnitHUDScript>().TogglePause();
+            }
+            else if (TurnScript.IsPlayerTurn && !TurnScript.paused)
             {
                 if (Input.GetMouseButtonDown(0))
                 {
-                    if (!currentUnitRef)
+                    Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit))
                     {
-                        Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
-                        RaycastHit hit;
-                        if (Physics.Raycast(ray, out hit))
+                        if (hit.collider.GetComponent<UnitScript>() && hit.collider.GetComponent<UnitScript>().PlayerControlled && !isGadgetControl)
                         {
-                            if (hit.collider.gameObject.GetComponent<UnitScript>() && hit.collider.gameObject.GetComponent<UnitScript>().PlayerControlled)
-                            {
-                                currentUnitRef = hit.collider.gameObject.GetComponent<UnitScript>();
-                                currentUnitRef.SelectUnit();
-                                print("Select Unit");
-                            }
+                            RemovePlayerUnitRef();
+                            EndLine();
+                            currentUnitRef = hit.collider.GetComponent<UnitScript>();
+                            currentUnitRef.SelectUnit();
+                            print("Select Unit");
                         }
-                    }
-                    else if (!(currentUnitRef.Moving || isGadgetControl))
-                    {
-                        Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
-                        RaycastHit hit;
-                        if (Physics.Raycast(ray, out hit))
+                        else if (currentUnitRef && !(currentUnitRef.Moving || isGadgetControl || currentUnitRef.MovedThisTurn))
                         {
                             //Is valid position
                             currentUnitRef.SelectMovePosition(currentUnitRef.GetPathListFromPathfinder(hit.point));
                             EndLine();
                         }
-                    }
-                    else
-                    {
-                        switch (gadgetControlType)
+                        else if (isGadgetControl)
                         {
-                            default:
-                                Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
-                                RaycastHit hit;
-                                if (Physics.Raycast(ray, out hit))
-                                {
-                                    if (!hit.collider.gameObject.GetComponent<UnitScript>())
+                            print("Hit");
+                            switch (gadgetControlType)
+                            {
+                                default:
+                                    if (!hit.collider.GetComponent<UnitScript>() && !(hit.collider.gameObject.layer == 11))
                                     {
                                         currentUnitRef.HeldGadget.SelectPosition(hit.point);
                                     }
-                                }
-                                break;
+                                    break;
+                                case 1:
+                                    if (hit.collider.GetComponent<UnitScript>() && hit.collider.GetComponent<UnitScript>() == currentUnitRef)
+                                    {
+                                        currentUnitRef.HeldGadget.AddEffectToUnit(hit.collider.GetComponent<UnitScript>());
+                                    }
+                                    break;
+                            }
                         }
                     }
                 }
+
                 else if (Input.GetMouseButtonDown(1))
                 {
                     if (isGadgetControl)
                     {
                         currentUnitRef.UnequipGadget();
                     }
-                    else
+                    else if (currentUnitRef)
                     {
                         RemovePlayerUnitRef();
                         EndLine();
+                        FindObjectOfType<UnitHUDScript>().HideUnitHUD();
                     }
                 }
-                else if (currentUnitRef && !currentUnitRef.Moving && !isGadgetControl)
+                else if (currentUnitRef && !currentUnitRef.Moving && !isGadgetControl && !currentUnitRef.MovedThisTurn)
                 {
                     Ray ray = Camera.main.ScreenPointToRay(new Vector2(Input.mousePosition.x, Input.mousePosition.y));
                     RaycastHit hit;
@@ -108,7 +111,7 @@ namespace Ty
         {
             if (FindObjectOfType<PathLineScript>())
             {
-                FindObjectOfType<PathLineScript>().RemoveSelf();
+                FindObjectOfType<PathLineScript>().DestroySelf();
             }
         }
 

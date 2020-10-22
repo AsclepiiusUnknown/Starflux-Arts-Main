@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,11 +25,43 @@ namespace Ty
             }
         }
         int enemyMoving;
+        int playerResource;
+        public static bool paused;
+
+        public void ChangeResource(int amount)
+        {
+            playerResource = Mathf.Clamp(playerResource + amount, 0, UnitScript.GetAllUnitsOfControlType(true).Count * 3);
+            FindObjectOfType<UnitHUDScript>().UpdatePaintCount(playerResource);
+        }
+
+        public bool HasEnoughResource(int amount)
+        {
+            return playerResource >= amount;
+        }
 
         private void Start()
         {
             PlayerTurnBegin();
             enemyUnits.AddRange(UnitScript.GetAllUnitsOfControlType(false));
+            ChangeResource(UnitScript.GetAllUnitsOfControlType(true).Count * 3);
+            paused = false;
+        }
+
+        public void RemoveEnemy(UnitScript enemy, bool completeMovement)
+        {
+            enemyUnits.Remove(enemy);
+            if (completeMovement)
+            {
+                for (int i = 0; i < enemyUnits.Count; i++)
+                {
+                    if (!enemyUnits[i].MovedThisTurn)
+                    {
+                        enemyMoving = i - 1;
+                        break;
+                    }
+                }
+                EnemyCompleteMovement();
+            }
         }
 
         public void EnemyCompleteMovement()
@@ -36,7 +69,7 @@ namespace Ty
             enemyMoving++;
             if (enemyMoving < enemyUnits.Count)
             {
-                enemyUnits[enemyMoving].SelectMovePosition(new List<Vector3>()); //Temp
+                enemyUnits[enemyMoving].AttemptToMoveToNearestPlayerUnit();
             }
             else
             {
@@ -47,30 +80,37 @@ namespace Ty
         void PlayerTurnBegin()
         {
             isPlayerTurn = true;
-            for (int i = 0; i < FindObjectsOfType<UnitScript>().Length; i++)
+            List<UnitScript> plyrs = UnitScript.GetAllUnitsOfControlType(true);
+            for (int i = 0; i < plyrs.Count; i++)
             {
-                if (FindObjectsOfType<UnitScript>()[i].PlayerControlled)
-                {
-                    FindObjectsOfType<UnitScript>()[i].MovedThisTurn = false;
-                }
+                plyrs[i].MovedThisTurn = false;
+                plyrs[i].TickEffects();
             }
+            FindObjectOfType<UnitHUDScript>().ShowPlayerHUD();
+            ChangeResource(1);
         }
 
         public void PlayerTurnEnd()
         {
+            FindObjectOfType<PlayerInput>().RemovePlayerUnitRef();
+            FindObjectOfType<PlayerInput>().EndLine();
             isPlayerTurn = false;
             EnemyTurnBegin();
         }
 
         void EnemyTurnBegin()
         {
+            enemyMoving = 0;
             isEnemyTurn = true;
             if (enemyUnits.Count > 0)
             {
                 for (int i = 0; i < enemyUnits.Count; i++)
                 {
-                    enemyUnits[i].MovedThisTurn = true;
+                    enemyUnits[i].MovedThisTurn = false;
+                    enemyUnits[i].TickEffects();
                 }
+                //enemyUnits[0].AttemptAttackNearbyPlayer();
+                enemyUnits[0].AttemptToMoveToNearestPlayerUnit();
             }
             else
             {
@@ -83,21 +123,22 @@ namespace Ty
             enemyMoving = 0;
             PlayerTurnBegin();
             isEnemyTurn = false;
-        }
-
-        public void PlayerFinishedMove()
-        {
-            FindObjectOfType<PlayerInput>().RemovePlayerUnitRef();
+            if (enemyUnits.Count <= 0)
+            {
+                PlayerWin();
+            }
         }
 
         void PlayerWin()
         {
-            
+            print("Win");
+            FindObjectOfType<UnitHUDScript>().ShowPauseMenu(false, "You Win");
         }
 
-        void PlayerLose()
+        public void PlayerLose()
         {
-
+            print("Lose");
+            FindObjectOfType<UnitHUDScript>().ShowPauseMenu(false, "You Lose");
         }
     }
 }

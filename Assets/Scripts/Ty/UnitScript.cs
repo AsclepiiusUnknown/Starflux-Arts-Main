@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using AStar;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,6 +43,7 @@ namespace Ty
             set
             {
                 movedThisTurn = value;
+                moveIndicator.SetActive(!value);
             }
         }
         public Transform holdPosition;
@@ -56,27 +58,39 @@ namespace Ty
         List<Vector3> movePositionList = new List<Vector3>();
         int moveIndex;
         public float moveSpeed = 3f;
+        public GameObject moveIndicator;
+        bool unappealing = false;
+        public bool Unappealing
+        {
+            get
+            {
+                return unappealing;
+            }
+        }
 
         public void SelectUnit()
         {
-            if (playerControlled && !MovedThisTurn)
+            if (playerControlled)
             {
-                FindObjectOfType<UnitHUDScript>().ShowPlayerHUD();
-                FindObjectOfType<UnitHUDScript>().ShowUnitInfo(InfoStruct);
+                FindObjectOfType<UnitHUDScript>().ShowUnitHUD();
+                FindObjectOfType<UnitHUDScript>().ShowUnitInfo(this);
             }
         }
 
         public void SpawnGadget(GadgetInfoStruct gadgetIn)
         {
-            UnequipGadget();
-            GadgetScript gadg = Instantiate(gadgetIn.prefab, holdPosition.position, holdPosition.rotation, holdPosition).GetComponent<GadgetScript>();
-            heldGadget = gadg;
-            if (playerControlled)
+            if (FindObjectOfType<TurnScript>().HasEnoughResource(gadgetIn.cost))
             {
-                FindObjectOfType<PlayerInput>().SetGadgetControl(gadg.Info.controlType);
-                FindObjectOfType<PlayerInput>().EndLine();
+                UnequipGadget();
+                GadgetScript gadg = Instantiate(gadgetIn.prefab, holdPosition.position, holdPosition.rotation, holdPosition).GetComponent<GadgetScript>();
+                heldGadget = gadg;
+                if (playerControlled)
+                {
+                    FindObjectOfType<PlayerInput>().SetGadgetControl(gadg.Info.controlType);
+                    FindObjectOfType<PlayerInput>().EndLine();
+                }
+                gadg.unitHolding = this;
             }
-            gadg.unitHolding = this;
         }
 
         public void UnequipGadget()
@@ -100,11 +114,144 @@ namespace Ty
             }
             if (positions.Count > 0)
             {
+                if (playerControlled && IsUnitAtPosition(positions[positions.Count - 1]))
+                {
+                    print("Unit at end position: " + positions[positions.Count - 1]);
+                    return;
+                }
+                int maxloop = positions.Count;
+                while (IsUnitAtPosition(positions[positions.Count - 1]) && maxloop > 0)
+                {
+                    positions.RemoveAt(positions.Count - 1);
+                    maxloop--;
+                }
                 movePositionList = positions;
                 moveIndex = 0;
                 moving = true;
                 MovedThisTurn = true;
+                RotateTowardMovement();
             }
+            if (playerControlled)
+            {
+                FindObjectOfType<UnitHUDScript>().UpdateMoveText(this);
+            }
+        }
+
+        bool IsUnitAtPosition(Vector3 pos)
+        {
+            AStar.Pathfinding path = FindObjectOfType<AStar.Pathfinding>();
+            Node posNode = path.GetComponent<AStar.Grid>().NodeFromWorldPos(pos);
+            for (int i = 0; i < FindObjectsOfType<UnitScript>().Length; i++)
+            {
+                Node tarNode = path.GetComponent<AStar.Grid>().NodeFromWorldPos(FindObjectsOfType<UnitScript>()[i].transform.position);
+                if (tarNode.pos == posNode.pos)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void AttemptAttackNearbyPlayer()
+        {
+            List<UnitScript> p = PlayersNeighbouring(GetAllUnitsOfControlType(true));
+            if (p.Count > 0)
+            {
+                int index = Random.Range(0, p.Count);
+                EnemyAttackUnit(p[index]);
+            }
+        }
+
+        public void EnemyAttackUnit(UnitScript unitIn)
+        {
+            if (unitIn.Unappealing)
+            {
+                return;
+            }
+            AStar.Pathfinding path = FindObjectOfType<AStar.Pathfinding>();
+            AStar.Grid grid = path.GetComponent<AStar.Grid>();
+            Node currentNode = grid.NodeFromWorldPos(transform.position);
+            Node targetNode = grid.NodeFromWorldPos(unitIn.gameObject.transform.position);
+            List<Node> nodes = grid.GetNeighborNodes(currentNode);
+            if (nodes.Contains(targetNode))
+            {
+                unitIn.UnitDie();
+            }
+        }
+
+        public void AttemptToMoveToNearestPlayerUnit()
+        {
+            AStar.Pathfinding path = FindObjectOfType<AStar.Pathfinding>();
+            AStar.Grid grid = path.GetComponent<AStar.Grid>();
+            List<UnitScript> players = GetAllUnitsOfControlType(true);
+            for (int i = players.Count - 1; i >= 0; i--)
+            {
+                if (players[i].Unappealing)
+                {
+                    players.RemoveAt(i);
+                }
+            }
+            int playerIndex = -1;
+            List<Node> finalNodes = new List<Node>();
+            int playerLength = 101;
+            for (int j = 0; j < players.Count; j++)
+            {
+                List<Node> nodes = grid.GetNeighborNodes(grid.NodeFromWorldPos(players[j].transform.position));
+                int index = -1;
+                int length = 100;
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    path.FindPath(transform.position, nodes[i].pos);
+                    if (grid.finalPath.Count < length)
+                    {
+                        index = i;
+                        length = grid.finalPath.Count;
+                    }
+                }
+                if (index != -1 && length < playerLength)
+                {
+                    playerIndex = j;
+                    playerLength = length;
+                    path.FindPath(transform.position, nodes[index].pos);
+                    finalNodes = grid.finalPath;
+                }
+            }
+            if (playerIndex != -1)
+            {
+                SelectMovePosition(NodeListToVector3List(finalNodes));
+            }
+            else
+            {
+                MovedThisTurn = true;
+                FindObjectOfType<TurnScript>().EnemyCompleteMovement();
+            }
+        }
+
+        public List<UnitScript> PlayersNeighbouring(List<UnitScript> playersIn)
+        {
+            List<UnitScript> units = new List<UnitScript>();
+            AStar.Pathfinding path = FindObjectOfType<AStar.Pathfinding>();
+            AStar.Grid grid = path.GetComponent<AStar.Grid>();
+            List<Node> nList = grid.GetNeighborNodes(grid.NodeFromWorldPos(transform.position));
+            for (int i = 0; i < playersIn.Count; i++)
+            {
+                Node n = grid.NodeFromWorldPos(playersIn[i].transform.position);
+                if (nList.Contains(n))
+                {
+                    units.Add(playersIn[i]);
+                }
+            }
+            return units;
+        }
+
+        List<Vector3> NodeListToVector3List(List<Node> nodesIn)
+        {
+            List<Vector3> vects = new List<Vector3>();
+            for (int i = 0; i < nodesIn.Count; i++)
+            {
+                vects.Add(nodesIn[i].pos);
+            }
+            return vects;
         }
 
         public List<Vector3> GetPathListFromPathfinder(Vector3 destination)
@@ -118,9 +265,36 @@ namespace Ty
             return vectorList;
         }
 
+        public void UnitDie()
+        {
+            moving = false;
+            if (playerControlled)
+            {
+                if (GetAllUnitsOfControlType(true).Count <= 1)
+                {
+                    FindObjectOfType<TurnScript>().PlayerLose();
+                }
+            }
+            else
+            {
+                FindObjectOfType<TurnScript>().RemoveEnemy(this, true);
+            }
+            Destroy(gameObject);
+        }
+
+        public void MakeUnappealing()
+        {
+            unappealing = true;
+        }
+
+        public void TickEffects()
+        {
+            unappealing = false;
+        }
+
         private void Update()
         {
-            if (moving)
+            if (moving && !TurnScript.paused)
             {
                 if (moveIndex < movePositionList.Count)
                 {
@@ -132,20 +306,27 @@ namespace Ty
                     {
                         transform.position = movePositionList[moveIndex];
                         moveIndex++;
+                        RotateTowardMovement();
                     }
                 }
                 else
                 {
                     moving = false;
-                    if (playerControlled)
+                    if (!playerControlled)
                     {
-                        FindObjectOfType<TurnScript>().PlayerFinishedMove();
-                    }
-                    else
-                    {
+                        AttemptAttackNearbyPlayer();
                         FindObjectOfType<TurnScript>().EnemyCompleteMovement();
                     }
                 }
+            }
+        }
+
+        void RotateTowardMovement()
+        {
+            if (moveIndex < movePositionList.Count)
+            {
+                Vector3 vec = movePositionList[moveIndex] - transform.position;
+                transform.rotation = Quaternion.LookRotation(vec, transform.up);
             }
         }
 
@@ -167,6 +348,15 @@ namespace Ty
     [System.Serializable]
     public struct UnitInformation
     {
+        [SerializeField]
+        private string unitName;
+        public string UnitName
+        {
+            get
+            {
+                return unitName;
+            }
+        }
         [SerializeField]
         List<GadgetInfoStruct> gadgetList;
         public List<GadgetInfoStruct> GadgetList
@@ -194,13 +384,5 @@ namespace Ty
                 return tileMoveSpeed;
             }
         }
-        /*
-        public UnitInformation(List<GadgetScript> gadgets, int health, int movement)
-        {
-            this.gadgetList = gadgets;
-            this.maxHealth = health;
-            this.tileMoveSpeed = movement;
-        }
-        */
     }
 }
