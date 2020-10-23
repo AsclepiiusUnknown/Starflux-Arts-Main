@@ -11,6 +11,7 @@ namespace Ty
 
         public void SelectGadget()
         {
+            FindObjectOfType<PlayerInput>().EndInputCheck();
             unitRef.SpawnGadget(structIn);
         }
     }

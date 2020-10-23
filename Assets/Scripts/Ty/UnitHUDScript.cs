@@ -101,6 +101,7 @@ namespace Ty {
 
         public void EndTurn()
         {
+            FindObjectOfType<PlayerInput>().EndInputCheck();
             HidePlayerHUD();
             FindObjectOfType<TurnScript>().PlayerTurnEnd();
         }
